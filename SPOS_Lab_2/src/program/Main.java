@@ -7,20 +7,26 @@
 
 // Created by Alexander Reeder, 2001 January 06
 
-package scheduling;
+package program;
+
+import program.core.algorithm.SjfSchedulingAlgorithm;
+import program.core.printer.ProcessPrinter;
+import program.domain.model.Process;
+import program.domain.model.Results;
+import program.infrastructure.util.Common;
 
 import java.io.*;
 import java.util.*;
 
-public class Scheduling {
+public class Main {
 
     private static int processnum = 5;
     private static int meanDev = 1000;
     private static int standardDev = 100;
     private static int runtime = 1000;
-    private static Vector processVector = new Vector();
+    private static final Vector<Process> processVector = new Vector<Process>();
     private static Results result = new Results("null","null",0);
-    private static String resultsFile = "src/resources/Summary-Results.txt";
+    private static final String resultsFile = "src/resources/Summary-Results.txt";
 
     private static void Init(String file) {
         File f = new File(file);
@@ -59,7 +65,7 @@ public class Scheduling {
                     }
                     X = X * standardDev;
                     cputime = (int) X + meanDev;
-                    processVector.addElement(new sProcess(cputime, ioblocking, 0, 0, 0));
+                    processVector.addElement(new Process(cputime, ioblocking, 0, 0, 0));
                 }
                 if (line.startsWith("runtime")) {
                     StringTokenizer st = new StringTokenizer(line);
@@ -79,13 +85,13 @@ public class Scheduling {
         System.out.println("standdev " + standardDev);
         int size = processVector.size();
         for (i = 0; i < size; i++) {
-            sProcess process = (sProcess) processVector.elementAt(i);
-            System.out.println("process " + i + " " + process.cputime + " " + process.ioblocking + " " + process.cpudone + " " + process.numblocked);
+            Process process = processVector.elementAt(i);
+            System.out.println("process " + i + " " + process.cpuTime + " " + process.ioBlocking + " " + process.cpuDone + " " + process.blockedCount);
         }
         System.out.println("runtime " + runtime);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         int i = 0;
 
         if (args.length != 1) {
@@ -112,31 +118,32 @@ public class Scheduling {
                 }
                 X = X * standardDev;
                 int cputime = (int) X + meanDev;
-                processVector.addElement(new sProcess(cputime,i*100,0,0,0));
+                processVector.addElement(new Process(cputime,i*100,0,0,0));
                 i++;
             }
         }
-        result = SchedulingAlgorithm.Run(runtime, processVector, result);
+        var printer = new ProcessPrinter("src/resources/Summary-Processes.txt");
+        result = new SjfSchedulingAlgorithm(printer).run(runtime, processVector);
         try {
             //BufferedWriter out = new BufferedWriter(new FileWriter(resultsFile));
             PrintStream out = new PrintStream(new FileOutputStream(resultsFile));
             out.println("Scheduling Type: " + result.schedulingType);
             out.println("Scheduling Name: " + result.schedulingName);
-            out.println("Simulation Run Time: " + result.compuTime);
+            out.println("Simulation Run Time: " + result.compTime);
             out.println("Mean: " + meanDev);
             out.println("Standard Deviation: " + standardDev);
             out.println("scheduling.Process #\tCPU Time\tIO Blocking\tCPU Completed\tCPU Blocked");
             for (i = 0; i < processVector.size(); i++) {
-                sProcess process = (sProcess) processVector.elementAt(i);
-                out.print(Integer.toString(i));
+                Process process = processVector.elementAt(i);
+                out.print(i);
                 if (i < 100) { out.print("\t\t"); } else { out.print("\t"); }
-                out.print(Integer.toString(process.cputime));
-                if (process.cputime < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.print(Integer.toString(process.ioblocking));
-                if (process.ioblocking < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.print(Integer.toString(process.cpudone));
-                if (process.cpudone < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.println(process.numblocked + " times");
+                out.print(process.cpuTime);
+                if (process.cpuTime < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
+                out.print(process.ioBlocking);
+                if (process.ioBlocking < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
+                out.print(process.cpuDone);
+                if (process.cpuDone < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
+                out.println(process.blockedCount + " times");
             }
             out.close();
         } catch (IOException e) { /* Handle exceptions */ }
