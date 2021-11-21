@@ -1,6 +1,16 @@
 package program.infrastructure.util;
+import program.domain.model.Process;
+
+import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class Common {
+
+    static public Vector<Process> processesCopy(Vector<Process> processes) {
+        return processes.stream()
+                .map(p -> new Process(p.cpuTime, p.withoutBlocking, p.cpuDone, p.ioNext, p.blockedCount))
+                .collect(Collectors.toCollection(Vector::new));
+    }
 
     static public int s2i (String s) {
         int i = 0;

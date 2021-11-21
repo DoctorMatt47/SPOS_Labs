@@ -9,10 +9,13 @@
 
 package program;
 
-import program.core.algorithm.SjfSchedulingAlgorithm;
+import program.core.algorithm.ISchedulingAlgorithm;
+import program.core.algorithm.ShortestJobFirstNonPreemptive;
+import program.core.algorithm.ShortestJobFirstPreemptive;
+import program.core.printer.IProcessPrinter;
 import program.core.printer.ProcessPrinter;
+import program.core.printer.ResultsPrinter;
 import program.domain.model.Process;
-import program.domain.model.Results;
 import program.infrastructure.util.Common;
 
 import java.io.*;
@@ -24,9 +27,70 @@ public class Main {
     private static int meanDev = 1000;
     private static int standardDev = 100;
     private static int runtime = 1000;
-    private static final Vector<Process> processVector = new Vector<Process>();
-    private static Results result = new Results("null","null",0);
-    private static final String resultsFile = "src/resources/Summary-Results.txt";
+    private static final Vector<Process> processVector = new Vector<>();
+    private static final String resourcesDir = "src/resources/";
+
+    private static final int ALGORITHMS_COUNT = 2;
+    private static final ArrayList<ISchedulingAlgorithm> algorithms = new ArrayList<>();
+    private static final ArrayList<IProcessPrinter> printers = new ArrayList<>();
+
+    public static void main(String[] args) throws IOException {
+        errorHandler(args);
+        addProcesses(args);
+
+        printers.add(new ProcessPrinter(resourcesDir + "Summary-Processes-0.txt"));
+        printers.add(new ProcessPrinter(resourcesDir + "Summary-Processes-1.txt"));
+
+        algorithms.add(new ShortestJobFirstPreemptive(printers.get(0)));
+        algorithms.add(new ShortestJobFirstNonPreemptive(printers.get(1)));
+
+        System.out.println("Working...");
+
+        for (int i = 0; i < ALGORITHMS_COUNT; i++) {
+            var processes = Common.processesCopy(processVector);
+            var result = algorithms.get(i).run(runtime, processes);
+            if (printers.get(i) instanceof Closeable) ((Closeable) printers.get(i)).close();
+
+            var resultsPrinter = new ResultsPrinter(resourcesDir + "Summary-Results-" + i + ".txt");
+            resultsPrinter.print(result, meanDev, standardDev, processes);
+            resultsPrinter.close();
+        }
+
+        System.out.println("Completed.");
+    }
+
+    private static void errorHandler(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Usage: 'java Scheduling <INIT FILE>'");
+            System.exit(-1);
+        }
+        File f = new File(args[0]);
+        if (!(f.exists())) {
+            System.out.println("Scheduling: error, file '" + f.getName() + "' does not exist.");
+            System.exit(-1);
+        }
+        if (!(f.canRead())) {
+            System.out.println("Scheduling: error, read of " + f.getName() + " failed.");
+            System.exit(-1);
+        }
+    }
+
+    private static void addProcesses(String[] args) {
+        Init(args[0]);
+        if (processVector.size() < processnum) {
+            var i = 0;
+            while (processVector.size() < processnum) {
+                double X = Common.R1();
+                while (X == -1.0) {
+                    X = Common.R1();
+                }
+                X = X * standardDev;
+                int cputime = (int) X + meanDev;
+                processVector.addElement(new Process(cputime,i*100,0,0,0));
+                i++;
+            }
+        }
+    }
 
     private static void Init(String file) {
         File f = new File(file);
@@ -86,68 +150,9 @@ public class Main {
         int size = processVector.size();
         for (i = 0; i < size; i++) {
             Process process = processVector.elementAt(i);
-            System.out.println("process " + i + " " + process.cpuTime + " " + process.ioBlocking + " " + process.cpuDone + " " + process.blockedCount);
+            System.out.println("process " + i + " " + process.cpuTime + " " + process.withoutBlocking + " " + process.cpuDone + " " + process.blockedCount);
         }
         System.out.println("runtime " + runtime);
-    }
-
-    public static void main(String[] args) throws FileNotFoundException {
-        int i = 0;
-
-        if (args.length != 1) {
-            System.out.println("Usage: 'java Scheduling <INIT FILE>'");
-            System.exit(-1);
-        }
-        File f = new File(args[0]);
-        if (!(f.exists())) {
-            System.out.println("Scheduling: error, file '" + f.getName() + "' does not exist.");
-            System.exit(-1);
-        }
-        if (!(f.canRead())) {
-            System.out.println("Scheduling: error, read of " + f.getName() + " failed.");
-            System.exit(-1);
-        }
-        System.out.println("Working...");
-        Init(args[0]);
-        if (processVector.size() < processnum) {
-            i = 0;
-            while (processVector.size() < processnum) {
-                double X = Common.R1();
-                while (X == -1.0) {
-                    X = Common.R1();
-                }
-                X = X * standardDev;
-                int cputime = (int) X + meanDev;
-                processVector.addElement(new Process(cputime,i*100,0,0,0));
-                i++;
-            }
-        }
-        var printer = new ProcessPrinter("src/resources/Summary-Processes.txt");
-        result = new SjfSchedulingAlgorithm(printer).run(runtime, processVector);
-        try {
-            //BufferedWriter out = new BufferedWriter(new FileWriter(resultsFile));
-            PrintStream out = new PrintStream(new FileOutputStream(resultsFile));
-            out.println("Scheduling Type: " + result.schedulingType);
-            out.println("Scheduling Name: " + result.schedulingName);
-            out.println("Simulation Run Time: " + result.compTime);
-            out.println("Mean: " + meanDev);
-            out.println("Standard Deviation: " + standardDev);
-            out.println("scheduling.Process #\tCPU Time\tIO Blocking\tCPU Completed\tCPU Blocked");
-            for (i = 0; i < processVector.size(); i++) {
-                Process process = processVector.elementAt(i);
-                out.print(i);
-                if (i < 100) { out.print("\t\t"); } else { out.print("\t"); }
-                out.print(process.cpuTime);
-                if (process.cpuTime < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.print(process.ioBlocking);
-                if (process.ioBlocking < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.print(process.cpuDone);
-                if (process.cpuDone < 100) { out.print(" (ms)\t\t"); } else { out.print(" (ms)\t"); }
-                out.println(process.blockedCount + " times");
-            }
-            out.close();
-        } catch (IOException e) { /* Handle exceptions */ }
-        System.out.println("Completed.");
     }
 }
 
