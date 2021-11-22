@@ -25,7 +25,7 @@ public class ShortestJobFirstNonPreemptive implements ISchedulingAlgorithm {
 
         var result = new Results(null, null, 0);
 
-        result.schedulingType = "Batch (Non-preemptive)";
+        result.schedulingType = "Non-preemptive";
         result.schedulingName = "Shortest Job First";
 
         processVector.sort(Comparator.comparingInt(o -> o.withoutBlocking));

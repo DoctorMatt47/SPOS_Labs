@@ -1,10 +1,15 @@
 package program.infrastructure.util;
+import program.Main;
 import program.domain.model.Process;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class Common {
+
+    static public String getProgramPath() {
+        return Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+    }
 
     static public Vector<Process> processesCopy(Vector<Process> processes) {
         return processes.stream()

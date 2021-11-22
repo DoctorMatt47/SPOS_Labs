@@ -28,7 +28,7 @@ public class Main {
     private static int standardDev = 100;
     private static int runtime = 1000;
     private static final Vector<Process> processVector = new Vector<>();
-    private static final String resourcesDir = "src/resources/";
+    private static final String resourcesDir = Common.getProgramPath() + "resources/";
 
     private static final int ALGORITHMS_COUNT = 2;
     private static final ArrayList<ISchedulingAlgorithm> algorithms = new ArrayList<>();
