@@ -38,6 +38,10 @@ public class Main {
         errorHandler(args);
         addProcesses(args);
 
+        for (int i = 0; i < processVector.size(); i++) {
+            processVector.get(i).id = i;
+        }
+
         printers.add(new ProcessPrinter(resourcesDir + "Summary-Processes-0.txt"));
         printers.add(new ProcessPrinter(resourcesDir + "Summary-Processes-1.txt"));
 
@@ -86,7 +90,8 @@ public class Main {
                 }
                 X = X * standardDev;
                 int cputime = (int) X + meanDev;
-                processVector.addElement(new Process(cputime,i*100,0,0,0));
+                var arrivalTime = new Random().nextInt(cputime / 4);
+                processVector.addElement(new Process(cputime, i*100, arrivalTime));
                 i++;
             }
         }
@@ -98,7 +103,6 @@ public class Main {
         String tmp;
         int cputime = 0;
         int ioblocking = 0;
-        double X = 0.0;
 
         try {
             //BufferedReader in = new BufferedReader(new FileReader(f));
@@ -123,13 +127,14 @@ public class Main {
                     StringTokenizer st = new StringTokenizer(line);
                     st.nextToken();
                     ioblocking = Common.s2i(st.nextToken());
-                    X = Common.R1();
+                    var X = Common.R1();
                     while (X == -1.0) {
                         X = Common.R1();
                     }
                     X = X * standardDev;
                     cputime = (int) X + meanDev;
-                    processVector.addElement(new Process(cputime, ioblocking, 0, 0, 0));
+                    var arrivalTime = new Random().nextInt(cputime / 4);
+                    processVector.addElement(new Process(cputime, ioblocking, arrivalTime));
                 }
                 if (line.startsWith("runtime")) {
                     StringTokenizer st = new StringTokenizer(line);

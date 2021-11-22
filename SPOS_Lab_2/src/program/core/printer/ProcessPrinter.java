@@ -12,8 +12,8 @@ public class ProcessPrinter implements Closeable, IProcessPrinter {
     }
 
     @Override
-    public void print(Process process, int processId, String action) {
-        out.printf("scheduling.Process: %d %s... %s\n", processId, action, process);
+    public void print(Process process, String action) {
+        out.printf("scheduling.Process: %d %s... %s\n", process.id, action, process);
     }
 
     @Override

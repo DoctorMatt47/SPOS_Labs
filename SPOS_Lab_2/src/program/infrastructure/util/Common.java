@@ -8,7 +8,11 @@ public class Common {
 
     static public Vector<Process> processesCopy(Vector<Process> processes) {
         return processes.stream()
-                .map(p -> new Process(p.cpuTime, p.withoutBlocking, p.cpuDone, p.ioNext, p.blockedCount))
+                .map(p -> {
+                    var process = new Process(p.cpuTime, p.withoutBlocking, p.arrivalTime);
+                    process.id = p.id;
+                    return process;
+                })
                 .collect(Collectors.toCollection(Vector::new));
     }
 
@@ -24,7 +28,7 @@ public class Common {
     }
 
     static public double R1 () {
-        java.util.Random generator = new java.util.Random(System.currentTimeMillis());
+        java.util.Random generator = new java.util.Random(System.nanoTime());
         double U = generator.nextDouble();
         double V = generator.nextDouble();
         double X =  Math.sqrt((8/Math.E)) * (V - 0.5)/U;

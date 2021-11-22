@@ -1,6 +1,4 @@
-package program.core.algorithm;// Run() is called from Scheduling.main() and is where
-// the scheduling algorithm written by the user resides.
-// User modification should occur within the Run() function.
+package program.core.algorithm;
 
 import program.core.printer.IProcessPrinter;
 import program.domain.model.Process;
@@ -10,11 +8,10 @@ import java.util.Comparator;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-public class ShortestJobFirstNonPreemptive implements ISchedulingAlgorithm {
-
+public class ShortestJobFirstPreemptive implements ISchedulingAlgorithm {
     private final IProcessPrinter printer;
 
-    public ShortestJobFirstNonPreemptive(IProcessPrinter printer) {
+    public ShortestJobFirstPreemptive(IProcessPrinter printer) {
         this.printer = printer;
     }
 
@@ -25,10 +22,8 @@ public class ShortestJobFirstNonPreemptive implements ISchedulingAlgorithm {
 
         var result = new Results(null, null, 0);
 
-        result.schedulingType = "Batch (Non-preemptive)";
+        result.schedulingType = "Preemptive";
         result.schedulingName = "Shortest Job First";
-
-        processVector.sort(Comparator.comparingInt(o -> o.withoutBlocking));
 
         Process currentProcess = null;
         while (comptime < runtime) {
@@ -72,7 +67,12 @@ public class ShortestJobFirstNonPreemptive implements ISchedulingAlgorithm {
                 if (process.arrivalTime == comptime) {
                     process.isArrived = true;
                     //printer.print(process, "arrived");
-                    if (currentProcess == null) {
+                    if (currentProcess == null
+                            || (process.withoutBlocking - process.withoutBlockingDone <
+                            currentProcess.withoutBlocking - currentProcess.withoutBlockingDone)) {
+                        if (currentProcess != null) {
+                            printer.print(currentProcess, "blocked");
+                        }
                         currentProcess = process;
                     }
                 }
